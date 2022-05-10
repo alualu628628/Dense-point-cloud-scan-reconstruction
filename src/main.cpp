@@ -38,7 +38,8 @@ int main() {
 	pcl::PolygonMesh oMeshModel;
 	oExplicitBuilder.OutputAllMeshes(oMeshModel);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pShowCloud(new pcl::PointCloud<pcl::PointXYZ>);
-	oExplicitBuilder.OutputAllMeshes(*pShowCloud);
+	std::vector<float> vNorSectLabels;
+	oExplicitBuilder.OutputClouds(*pShowCloud, vNorSectLabels);
 
 	int iVerticesNum;
 	int iFacesNum;
@@ -53,7 +54,7 @@ int main() {
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 	HpdDisplay hpdisplay;
 	//viewer=hpdisplay.Showsimplecolor(occloud,"grey");
-	viewer = hpdisplay.Showsimplecolor(pShowCloud,"yellow");
+	viewer = hpdisplay.Showfeatureresult(pShowCloud,vNorSectLabels);
 	//viewer = hpdisplay.Showclassification(vScenePoints, "random");
 	viewer->addSphere(oViewPoint, 0.2, 0.0, 0.0, 1.0, "viewpointer");
 	//cloud->points.push_back(oViewPoint);

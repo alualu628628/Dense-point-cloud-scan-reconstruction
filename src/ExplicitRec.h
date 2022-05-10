@@ -59,6 +59,11 @@ public:
 	//reload, output all vertices in a point repeatable way using three-point arrangement
 	void OutputAllMeshes(pcl::PointCloud<pcl::PointXYZ> & vCloud);
 
+	//output point clouds
+	void OutputClouds(pcl::PointCloud<pcl::PointXYZ> & vCloud);
+	//output point clouds with features
+	void OutputClouds(pcl::PointCloud<pcl::PointXYZ> & vCloud, std::vector<float> & vNorSectLabel);
+
 	//count the number of points
 	void CountNumber(int & iVerticesNum, int & iFacesNum);
 

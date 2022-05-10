@@ -381,6 +381,64 @@ void ExplicitRec::OutputAllMeshes(pcl::PointCloud<pcl::PointXYZ> & vCloud){
 
 }
 
+/*=======================================
+OutputClouds reload
+Input: none
+Output: vCloud - all processed point
+vNorSectLabels - sector index of each processed point
+Function: output the all processed point
+========================================*/
+void ExplicitRec::OutputClouds(pcl::PointCloud<pcl::PointXYZ> & vCloud){
+
+	vCloud.clear();
+
+	//for each sector
+	for (int i = 0; i != m_vAllSectorClouds.size(); ++i){
+
+		//for each point in a sector
+		for (int j = 0; j != m_vAllSectorClouds[i]->points.size(); ++j){
+
+			//get the point
+			vCloud.points.push_back(m_vAllSectorClouds[i]->points[j]);
+
+		}//end j
+
+	}//end i
+
+}
+
+/*=======================================
+OutputClouds reload
+Input: none
+Output: vCloud - all processed point 
+vNorSectLabels - sector index of each processed point 
+Function: output processed point with labels
+========================================*/
+void ExplicitRec::OutputClouds(pcl::PointCloud<pcl::PointXYZ> & vCloud, std::vector<float> & vNorSectLabels){
+
+	vCloud.clear();
+
+	//for each sector
+	for (int i = 0; i != m_vAllSectorClouds.size(); ++i){
+		
+		//compute the normalized sector label
+		float fNorSecLabel = float(i) / float(m_iSectNum);
+
+		//for each point in a sector
+		for (int j = 0; j != m_vAllSectorClouds[i]->points.size(); ++j){
+
+			//get the point
+			vCloud.points.push_back(m_vAllSectorClouds[i]->points[j]);	
+
+			//get the label
+			vNorSectLabels.push_back(fNorSecLabel);
+
+		}//end j
+
+	}//end i
+
+}
+
 
 /*=======================================
 CountNumber
