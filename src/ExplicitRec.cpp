@@ -348,6 +348,41 @@ void ExplicitRec::OutputAllMeshes(pcl::PolygonMesh & MeshModel){
 }
 
 /*=======================================
+OutputAllMeshes
+Input: none
+Outout: vCloud - points presenting face relationship (point repeatable)
+Function: output all vertices in a point repeatable way using three-point arrangement
+========================================*/
+void ExplicitRec::OutputAllMeshes(pcl::PointCloud<pcl::PointXYZ> & vCloud){
+
+	//relaitionships of vertexs in all point clouds
+	 vCloud.points.clear();
+
+	//for each sector
+	for (int i = 0; i != m_vAllSectorFaces.size(); ++i){
+
+		//for each face
+		for (int j = 0; j != m_vAllSectorFaces[i].size(); ++j){
+
+			//for each face vertex id
+			for (int k = 0; k != m_vAllSectorFaces[i][j].vertices.size(); ++k){
+
+				//vertex id in each sector
+				int iVertexSectorIdx = m_vAllSectorFaces[i][j].vertices[k];
+
+				//vertex id in all data
+				vCloud.points.push_back(m_vAllSectorClouds[i]->points[iVertexSectorIdx]);
+
+			}//end k
+
+		}//end j
+
+	}//end i
+
+}
+
+
+/*=======================================
 CountNumber
 Input: iVerticesNum - total number of points/vertices
 Outout: iFacesNum - total number of faces

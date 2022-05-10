@@ -56,6 +56,8 @@ public:
 
 	//combine and output all vertices
 	void OutputAllMeshes(pcl::PolygonMesh & MeshModel);
+	//reload, output all vertices in a point repeatable way using three-point arrangement
+	void OutputAllMeshes(pcl::PointCloud<pcl::PointXYZ> & vCloud);
 
 	//count the number of points
 	void CountNumber(int & iVerticesNum, int & iFacesNum);
