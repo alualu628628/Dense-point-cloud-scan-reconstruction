@@ -272,6 +272,82 @@ void ExplicitRec::FrameReconstruction(const pcl::PointCloud<pcl::PointXYZ> & vSc
 
 
 /*=======================================
+OutputAllMeshes
+Input: none
+Outout: MeshModel - mesh of all point clouds
+Function: combine mesh from each sector and output mesh results
+========================================*/
+void ExplicitRec::OutputAllMeshes(pcl::PolygonMesh & MeshModel){
+
+	//new a point idx in scene point clouds
+	std::vector<std::vector<int>> vPointInAllDataIdx;
+	vPointInAllDataIdx.reserve(m_vAllSectorClouds.size());
+	
+	std::vector<int> vEmptyVec;
+	for (int i = 0; i != m_vAllSectorClouds.size(); ++i)
+		vPointInAllDataIdx.push_back(vEmptyVec);
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pAllCloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+	int iPNum = 0;
+	
+	//for each sector
+	for (int i = 0; i != m_vAllSectorClouds.size(); ++i){
+
+		//for each point in a sector
+		for (int j = 0; j != m_vAllSectorClouds[i]->points.size(); ++j){
+			
+			//get the point
+			pAllCloud->points.push_back(m_vAllSectorClouds[i]->points[j]);
+			
+			//get point index in all point clouds
+			vPointInAllDataIdx[i].push_back(iPNum);
+			iPNum++;
+
+		}//end j
+
+	}//end i
+
+	//relaitionships of vertexs in all point clouds
+	std::vector<pcl::Vertices> oPolygons;
+
+	//for each sector
+	for (int i = 0; i != m_vAllSectorFaces.size(); ++i){
+		
+		//for each face
+		for (int j = 0; j != m_vAllSectorFaces[i].size(); ++j){
+
+			pcl::Vertices oOneFace;
+
+			//for each face vertex id
+			for (int k = 0; k != m_vAllSectorFaces[i][j].vertices.size(); ++k){
+				
+				//vertex id in each sector
+				int iVertexSectorIdx = m_vAllSectorFaces[i][j].vertices[k];
+
+				//vertex id in all data
+				int iVertexGlobalIdx = vPointInAllDataIdx[i][iVertexSectorIdx];
+
+				//get a vertex
+				oOneFace.vertices.push_back(iVertexGlobalIdx);
+					
+			}//end k
+
+			oPolygons.push_back(oOneFace);
+		
+		}//end j
+
+	}//end i
+
+	//get the polygon
+	pcl::toPCLPointCloud2(*pAllCloud, MeshModel.cloud);
+	MeshModel.polygons = oPolygons;
+
+	//pcl::io::savePLYFileBinary("reconstruction_res.ply", MeshModel);
+
+}
+
+/*=======================================
 CountNumber
 Input: iVerticesNum - total number of points/vertices
 Outout: iFacesNum - total number of faces

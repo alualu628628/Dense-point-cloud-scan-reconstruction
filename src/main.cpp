@@ -29,11 +29,14 @@ int main() {
 	oViewPoint.y = 0.0;
 	oViewPoint.z = 0.0;
 
+
 	pcl::PointCloud<pcl::PointNormal>::Ptr pFramePNormal(new pcl::PointCloud<pcl::PointNormal>);
 	ExplicitRec oExplicitBuilder;
 	oExplicitBuilder.HorizontalSectorSize(12);
 	oExplicitBuilder.SetViewPoint(oViewPoint);
 	oExplicitBuilder.FrameReconstruction(*pSceneCloud, *pFramePNormal);
+	pcl::PolygonMesh oMeshModel;
+	oExplicitBuilder.OutputAllMeshes(oMeshModel);
 
 	int iVerticesNum;
 	int iFacesNum;
@@ -52,15 +55,8 @@ int main() {
 	//viewer = hpdisplay.Showclassification(vScenePoints, "random");
 	viewer->addSphere(oViewPoint, 0.2, 0.0, 0.0, 1.0, "viewpointer");
 	//cloud->points.push_back(oViewPoint);
-	for (int i = 0; i != oExplicitBuilder.m_vAllSectorClouds.size(); ++i){
+	viewer->addPolygonMesh(oMeshModel, "sec_mesh");
 
-		std::stringstream sMeshStream;
-		sMeshStream << i << "_sec_mesh";
-		std::string sMeshName;
-		sMeshStream >> sMeshName;
-		viewer->addPolygonMesh<pcl::PointXYZ>(oExplicitBuilder.m_vAllSectorClouds[i], oExplicitBuilder.m_vAllSectorFaces[i], sMeshName);
-
-	}
 
 	viewer->addPointCloudNormals<pcl::PointNormal>(pFramePNormal, 1, 0.4f, "normal");
 	pcl::io::savePLYFileASCII("cloudswithnormal.ply", *pFramePNormal);
