@@ -208,3 +208,6 @@ void MeshSample::OutputVoxelizedClouds(pcl::PointCloud<pcl::PointXYZ> & vVoxelCl
 	savePLYFileASCII("sampled_clouds.ply", vVoxelCloud);
 
 }
+
+
+
