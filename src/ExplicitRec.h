@@ -12,7 +12,7 @@ class ExplicitRecParam{
 
 public:
 
-	ExplicitRecParam() :m_GHPRParam(3.6), m_fPseudoFaceThr(0.05){
+	ExplicitRecParam() :m_GHPRParam(3.6), m_fPseudoFaceThr(0.05), m_iSectorMinPNum(5){
 
 
 	};
@@ -20,10 +20,14 @@ public:
 	~ExplicitRecParam(){
 	};
 
+	//ghpr threshold
 	float m_GHPRParam;
 
 	//scan angle threshold for removing pseudo planes
 	float m_fPseudoFaceThr;
+
+	//the min point number for convex hull
+	int m_iSectorMinPNum;
 
 };
 
@@ -97,6 +101,8 @@ private:
 
 	//the elevation value of the viewpoint has been obtained
 	bool m_bElevationFlag;
+
+
 
 
 

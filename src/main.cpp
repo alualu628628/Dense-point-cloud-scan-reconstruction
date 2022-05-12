@@ -33,7 +33,7 @@ int main() {
 	pcl::PointCloud<pcl::PointNormal>::Ptr pFramePNormal(new pcl::PointCloud<pcl::PointNormal>);
 	ExplicitRec oExplicitBuilder;
 	oExplicitBuilder.HorizontalSectorSize(12);
-	oExplicitBuilder.SetViewPoint(oViewPoint);
+	oExplicitBuilder.SetViewPoint(oViewPoint,1.4);
 	oExplicitBuilder.FrameReconstruction(*pSceneCloud, *pFramePNormal);
 	pcl::PolygonMesh oMeshModel;
 	oExplicitBuilder.OutputAllMeshes(oMeshModel);
