@@ -43,9 +43,14 @@ void ExplicitRec::SetViewPoint(const pcl::PointXYZ & oViewPoint, float fViewElev
 	m_oViewPoint.y = oViewPoint.y;
 	m_oViewPoint.z = oViewPoint.z;
 
-	m_fViewElevation = fViewElevation;
-	//the elevation value of the viewpoint has been obtained
-	m_bElevationFlag = true;
+	//If the height of the laser scanner above the ground is known
+	if(fViewElevation){
+
+		m_fViewElevation = fViewElevation;
+		//the elevation value of the viewpoint has been obtained
+		m_bElevationFlag = true;
+
+	}
 
 }
 
