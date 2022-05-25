@@ -4,7 +4,9 @@
 #include<cmath>
 #include<vector>
 #include<iostream>
-
+#include<pcl/io/pcd_io.h>
+#include<pcl/point_types.h>
+#include<pcl/kdtree/kdtree.h>
 
 // 一维滤波器信息结构体
 typedef  struct{
@@ -58,6 +60,9 @@ public:
 
 	//
 	void UnionMinimalFusion(const std::vector<float> & vCurrentDis);
+
+	//fuses normal vector
+	pcl::PointNormal NormalFusion(const std::vector<int> & vPointIdx, const pcl::PointCloud<pcl::PointNormal> & vCloudNormal);
 
 	//*******data********
 	std::vector<float> m_vAccDis;

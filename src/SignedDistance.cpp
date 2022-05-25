@@ -234,6 +234,54 @@ std::vector<float> SignedDistance::PointBasedGlance(const pcl::PointCloud<pcl::P
 
 
 
+
+std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::PointNormal>::Ptr & pCloudNormals,
+	                                                 Voxelization & oVoxeler){
+	
+	//
+	pcl::PointCloud<pcl::PointNormal>::Ptr pVoxelNormals(new pcl::PointCloud<pcl::PointNormal>);
+
+	Fusion oVoxelFusion;
+
+	//****get the nodes that are near the surface****
+	oVoxeler.VoxelizePoints(*pCloudNormals);
+
+	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
+		
+		pcl::PointNormal oOneVoxelN = oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx[i], *pCloudNormals);
+		pVoxelNormals->push_back(oOneVoxelN);
+	
+	}
+
+	//compute the sampled point normal based on the face normal
+	ConvexHullOperation oConvexHullOPer;
+
+	std::vector<FacePara> vVoxelNormalPara;
+
+
+	//compute the sampled point normal and divde it into point and normal
+	oConvexHullOPer.ComputeAllFaceParams(*pVoxelNormals, vVoxelNormalPara);
+
+
+
+	//construct new voxel index
+	std::vector<int> vEmptyVec;
+
+	//from corner to plan distance
+	std::vector<float> vCornerSignedDis = PlanDistance(oVoxeler, vVoxelNormalPara);
+
+	WritePointCloudTxt("NodeSignedDistance.txt", *oVoxeler.m_pCornerCloud, vCornerSignedDis);
+
+	//prepare for next calculation
+	oVoxeler.ClearMiddleData();
+
+	//output
+	return vCornerSignedDis;
+
+}
+
+
+
 std::vector<float> SignedDistance::MinKDDis(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & pQueryCloud){
 
 	std::vector<float> vMinDis;
@@ -292,6 +340,60 @@ std::vector<float> SignedDistance::MinKDDSignedDis(const pcl::PointCloud<pcl::Po
 			vSignedDis[i] = fSignValue*fMinDis;
 		}
 
+	}
+
+	return vSignedDis;
+
+}
+
+
+
+
+std::vector<float> SignedDistance::PlanDistance(Voxelization & oVoxeler, const std::vector<FacePara> & vNormalPara){
+
+
+	float fDefault = oVoxeler.m_fDefault;
+
+	std::vector<float> vSignedDis(oVoxeler.m_pCornerCloud->points.size(), 0.0);
+	std::vector<int> vCornerHits(oVoxeler.m_pCornerCloud->points.size(),0);
+
+	ConvexHullOperation oNormalOper;
+
+	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
+
+		if (oVoxeler.m_vVoxelPointIdx[i].size()){
+
+			//get the corners
+			IndexinAxis oP3DIndex = oVoxeler.Tran1DIdxTo3D(i);
+
+			std::vector<int> vCornerIdxs;
+			oVoxeler.CornerIdxs(oP3DIndex, vCornerIdxs);
+
+			//to each corner
+			for (int j = 0; j != vCornerIdxs.size(); ++j){
+
+				int iOneCornerIdx = vCornerIdxs[j];
+
+				Eigen::Vector3f oOneCorner(oVoxeler.m_pCornerCloud->points[iOneCornerIdx].x,
+					                       oVoxeler.m_pCornerCloud->points[iOneCornerIdx].y,
+										   oVoxeler.m_pCornerCloud->points[iOneCornerIdx].z);
+
+				float fSignValue = oNormalOper.PointToFaceDis(oOneCorner, vNormalPara[i].oNormal, vNormalPara[i].fDparam);
+
+				vSignedDis[iOneCornerIdx] = vSignedDis[iOneCornerIdx] + fSignValue;
+
+				vCornerHits[iOneCornerIdx] = vCornerHits[iOneCornerIdx] + 1;
+
+
+			}//end  j != vCornerIdxs.size();
+
+		}//end if
+
+	}//end i != oVoxeler.m_vVoxelPointIdx.size()
+
+	for (int i = 0; i != vSignedDis.size(); ++i){
+		if (vCornerHits[i])
+			vSignedDis[i] = vSignedDis[i] / float(vCornerHits[i]);
 	}
 
 	return vSignedDis;

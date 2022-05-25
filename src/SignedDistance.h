@@ -9,6 +9,7 @@
 #include "ConvexHullOperation.h"
 #include "MeshSample.h"
 #include "Polar.h"
+#include "Fusion.h"
 #include "readtxt.h"
 
 
@@ -63,11 +64,20 @@ public:
 		                                const pcl::PointXYZ & oViewPoint,
 		                                Voxelization & oVoxeler);
 
+
+	//compute the signed distance based on ray cast (polar) - type 2
+	std::vector<float> NormalBasedGlance(const pcl::PointCloud<pcl::PointNormal>::Ptr & pCloudNormals,
+		                                 Voxelization & oVoxeler);
+
 	//compute the nearest distance
 	static std::vector<float> MinKDDis(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & pQueryCloud);
+
 	//compute the signed distance based on finding the nearest surface point - type 3
 	std::vector<float> MinKDDSignedDis(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pNCloud, Voxelization & voxeler,
 		const std::vector<FacePara> & vNormalPara);
+
+	//compute the signed distance based on corners to plan in a voxel
+	std::vector<float> PlanDistance(Voxelization & oVoxeler, const std::vector<FacePara> & vNormalPara);
 
 	//=====data=====
 	//
