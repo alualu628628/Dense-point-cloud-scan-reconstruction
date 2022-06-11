@@ -84,6 +84,8 @@ public:
 	//voxelize the sampled point clouds and also the raw point clouds
 	void VoxelizePoints(const pcl::PointCloud<pcl::PointXYZ> & vSampledCloud, const pcl::PointCloud<pcl::PointXYZ> & vCloud);
 
+	void OutputNonEmptyVoxels(std::vector<bool> & vVoxelStatus);
+
 	//get the nodes near the surface
 	//void FindNearNodes(const pcl::PointCloud<pcl::PointXYZ> & vCloud, pcl::PointCloud<pcl::PointXYZ> & vNearNodes);
 
@@ -115,6 +117,9 @@ public:
 
 	//the index of point in each voxel
 	std::vector <std::vector<int>> m_vVoxelPointIdx;
+
+	//
+	pcl::PointCloud<pcl::PointNormal>::Ptr m_pVoxelNormals;
 
 	//a vector indicates whether the corner is adjacent to the surface
 	std::vector<bool> m_vNearStatus;

@@ -1,4 +1,4 @@
-///*************Multi-frames reconstruction*********************/
+///*************Laser test*********************/
 #include "HpdPointCloudDisplay.h"
 #include "LasOperator.h"
 #include "SectorPartition.h"
@@ -17,8 +17,17 @@ float EuclideanDistance(const pcl::PointXYZ & oBasedP, const pcl::PointNormal & 
 
 	return sqrt(fDis);
 
-}
+};
 
+float EuclideanDistance(const pcl::PointXYZ & oBasedP, const pcl::PointXYZ & oTargetP){
+
+	float fDis = (oBasedP.x - oTargetP.x)*(oBasedP.x - oTargetP.x)
+		+ (oBasedP.y - oTargetP.y)*(oBasedP.y - oTargetP.y)
+		+ (oBasedP.z - oTargetP.z)*(oBasedP.z - oTargetP.z);
+
+	return sqrt(fDis);
+
+};
 
 void NearbyClouds(const pcl::PointCloud<pcl::PointNormal> & pRawCloud, const pcl::PointXYZ & oBasedP, pcl::PointCloud<pcl::PointNormal> & pNearCloud, float fLength){
 
@@ -33,77 +42,261 @@ void NearbyClouds(const pcl::PointCloud<pcl::PointNormal> & pRawCloud, const pcl
 
 };
 
+
+void NearbyClouds(const pcl::PointCloud<pcl::PointXYZ> & pRawCloud, const pcl::PointXYZ & oBasedP, pcl::PointCloud<pcl::PointXYZ> & pNearCloud, float fLength){
+
+	pNearCloud.clear();
+
+	for (int i = 0; i != pRawCloud.points.size(); ++i){
+
+		if (EuclideanDistance(oBasedP, pRawCloud.points[i]) <= fLength)
+			pNearCloud.push_back(pRawCloud.points[i]);
+
+	}
+
+};
+
+
 int main() {
 
-
 	std::vector<Point3D> vScenePoints;
-	pcl::PointCloud<pcl::PointNormal>::Ptr pSceneCloud(new pcl::PointCloud<pcl::PointNormal>);
-	pcl::PointCloud<pcl::PointNormal>::Ptr pNearCloud(new pcl::PointCloud<pcl::PointNormal>);
-
-	pcl::io::loadPLYFile("Map_PCNormal.ply", *pSceneCloud);
-	//HPDpointclouddataread("Map_trees.las", pRawCloud, vScenePoints);
-
-	//SamplePoints(*pRawCloud, *pSceneCloud, 5);
-	std::cout << "finish reading" << std::endl;
-	std::cout << pSceneCloud->points.size() << std::endl;
-
-	pcl::PointXYZ oViewPoint;
-	//x 0.535947 y  0.62239 z 0.535947 bunny
-	//x 0.457275 y  0.500000 z 1.814216 Cassette.las
-	//x 0.0 -y 0.0 z 0.0 scene1oneframe.las
-	//x 58.264355 y -39.349892 z 5.656522 Map_SLAM.las
-	oViewPoint.x = 51.817355;
-	oViewPoint.y = -7.378492;
-	oViewPoint.z = 6.556522;
-
-	NearbyClouds(*pSceneCloud, oViewPoint, *pNearCloud, 10.0f);
-	std::cout << pNearCloud->points.size() << std::endl;
-	//******voxelization********
-	Voxelization oVoxeler(*pNearCloud);
-	//set the number of voxels
-	oVoxeler.GetIntervalNum(50,50,50);
-	//voxelize the space
-	oVoxeler.VoxelizeSpace();
-
-	//******compute signed distance********
-	//***compute signed distance of a glance***
-	SignedDistance oSDer;
-	std::vector<float> vSignedDis = oSDer.NormalBasedGlance(pNearCloud, oVoxeler);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pSceneCloud(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pRawCloud(new pcl::PointCloud<pcl::PointXYZ>);
 	
-	//******construction********
-	//marching cuber
-	CIsoSurface<float> oMarchingCuber;
-	oMarchingCuber.GenerateSurface(vSignedDis, 0,
-			                       oVoxeler.m_iFinalVoxelNum.ixnum - 1, oVoxeler.m_iFinalVoxelNum.iynum - 1, oVoxeler.m_iFinalVoxelNum.iznum - 1, 
-			                       oVoxeler.m_oVoxelLength.x, oVoxeler.m_oVoxelLength.y, oVoxeler.m_oVoxelLength.z);
-	
-	
-	//******output********
-	pcl::PolygonMesh oCBModel;
-	oMarchingCuber.OutputMesh(oVoxeler.m_oOriCorner, oCBModel);
-	
-	pcl::io::savePLYFileBinary("cb_res.ply", oCBModel);
-	std::cout << "the number of final faces after reconstruction: " << oCBModel.polygons.size() << std::endl;
+	std::vector<std::vector<double>> vOdomMatrix;
 
+	HPDpointclouddataread("sampled_building.las", pSceneCloud, vScenePoints);
+
+	ReadMatrix("optimised_odometry.txt", vOdomMatrix, 1);
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pOdomCloud(new pcl::PointCloud<pcl::PointXYZ>);
+	for (int i = 0; i < vOdomMatrix.size(); i = i + 20){
+		pcl::PointXYZ oPoint;
+		oPoint.x = vOdomMatrix[i][2];
+		oPoint.y = vOdomMatrix[i][3];
+		oPoint.z = vOdomMatrix[i][4];
+		pOdomCloud->push_back(oPoint);
+	}
+
+	pcl::PointCloud<pcl::PointNormal>::Ptr pSceneNormal(new pcl::PointCloud<pcl::PointNormal>);
+
+	for (int k = 0; k < 200; k = k + 1){
+
+		std::cout << k << "th viewpoint starts " <<std::endl;
+		
+		pcl::PointXYZ oViewPoint;
+
+		oViewPoint.x = pOdomCloud->points[k].x;
+		oViewPoint.y = pOdomCloud->points[k].y;
+		oViewPoint.z = pOdomCloud->points[k].z;
 	
-	//******display********
+		pcl::PointCloud<pcl::PointXYZ>::Ptr pNearCloud(new pcl::PointCloud<pcl::PointXYZ>);
+		NearbyClouds(*pSceneCloud, oViewPoint, *pNearCloud, 15.0f);
+
+		pcl::PointCloud<pcl::PointNormal>::Ptr pFramePNormal(new pcl::PointCloud<pcl::PointNormal>);
+		ExplicitRec oExplicitBuilder;
+		oExplicitBuilder.SetGHPR(3.8);
+		oExplicitBuilder.HorizontalSectorSize(12);
+		oExplicitBuilder.SetViewPoint(oViewPoint);
+		oExplicitBuilder.FrameReconstruction(*pNearCloud, *pFramePNormal);
+
+		if (k){
+
+			//get the raw index using the shortest distance approach
+			pcl::KdTreeFLANN<pcl::PointNormal> oSceneKdtree;
+			oSceneKdtree.setInputCloud(pSceneNormal);
+
+			//searching based on kdtree
+			for (size_t i = 0; i != pFramePNormal->points.size(); i++){
+				std::vector<int> kdindices;
+				std::vector<float> kdistances;
+				//find the first point as itself
+				oSceneKdtree.nearestKSearch(pFramePNormal->points[i], 1, kdindices, kdistances);
+				//at least one point can be found
+
+				if (sqrt(kdistances[0]) < 0.01f){
+					
+					int j = kdindices[0];
+					pSceneNormal->points[j].normal_x = (pSceneNormal->points[j].normal_x + pFramePNormal->points[i].normal_x) / 2.0f;
+					pSceneNormal->points[j].normal_y = (pSceneNormal->points[j].normal_y + pFramePNormal->points[i].normal_y) / 2.0f;
+					pSceneNormal->points[j].normal_z = (pSceneNormal->points[j].normal_z + pFramePNormal->points[i].normal_z) / 2.0f;
+				
+				}else{
+				
+					pSceneNormal->points.push_back(pFramePNormal->points[i]);
+				}
+
+			}
+
+		
+		}else{
+
+			for (int i = 0; i != pFramePNormal->points.size(); ++i)
+				pSceneNormal->points.push_back(pFramePNormal->points[i]);
+		
+		}
+
+		std::cout << k<< "th done, total number is " << pOdomCloud->points.size() << std::endl;
+	
+	}
+
+	std::cout << pSceneNormal->points.size() << std::endl;
+	pcl::io::savePLYFile("Test_PCNormal.ply", *pSceneNormal);
+	
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 	HpdDisplay hpdisplay;
-	//viewer = hpdisplay.Showclassification(mc->m_vCornerCloud, vInner, "assign");
-	viewer = hpdisplay.Showfeatureresult(*oVoxeler.m_pCornerCloud, vSignedDis, "redgreen");
-	//viewer = hpdisplay.Showclassification(pVoxelCorners, "assign");
-	viewer->addSphere(oViewPoint, 0.02, 0.0, 0.0, 1.0, "viewpointer");	
-	//viewer->addPolygonMesh<pcl::PointXYZ>(pRawCloud, oSDer.m_vSurfaceIdxs, "polyline");
+		//viewer=hpdisplay.Showsimplecolor(occloud,"grey");
+	viewer = hpdisplay.Showsimplecolor(pSceneCloud, "grey");
+		//viewer = hpdisplay.Showclassification(vScenePoints, "random");
+	for (int i = 0; i != 200; ++i){
 	
-	while (!viewer->wasStopped()){
+			std::stringstream sMeshStream;
+			sMeshStream << i << "_sec_mesh";
+			std::string sMeshName;
+			sMeshStream >> sMeshName;
+			viewer->addSphere(pOdomCloud->points[i], 0.2, 0.0, 0.0, 1.0, sMeshName);
 	
-		viewer->spinOnce ();
-		
+		}
+	
+	while (!viewer->wasStopped())
+	{
+		viewer->spinOnce();
 	}
-		
+	
 	return 0;
 		
 }
+
+
+
+/////*************Multi-frames reconstruction*********************/
+//#include "HpdPointCloudDisplay.h"
+//#include "LasOperator.h"
+//#include "SectorPartition.h"
+//#include "CIsoSurface.h"
+//#include "ExplicitRec.h"
+//#include "SignedDistance.h"
+//#include "GHPR.h"
+//#include <iostream>
+//#include <cmath>
+//
+//float EuclideanDistance(const pcl::PointXYZ & oBasedP, const pcl::PointNormal & oTargetP){
+//
+//	float fDis = (oBasedP.x - oTargetP.x)*(oBasedP.x - oTargetP.x)
+//		          + (oBasedP.y - oTargetP.y)*(oBasedP.y - oTargetP.y)
+//		          + (oBasedP.z - oTargetP.z)*(oBasedP.z - oTargetP.z);
+//
+//	return sqrt(fDis);
+//
+//}
+//
+//
+//void NearbyClouds(const pcl::PointCloud<pcl::PointNormal> & pRawCloud, const pcl::PointXYZ & oBasedP, pcl::PointCloud<pcl::PointNormal> & pNearCloud, float fLength){
+//
+//	pNearCloud.clear();
+//			
+//	for (int i = 0; i != pRawCloud.points.size(); ++i){
+//		
+//		if (EuclideanDistance(oBasedP, pRawCloud.points[i]) <= fLength)
+//			pNearCloud.push_back(pRawCloud.points[i]);
+//
+//	}
+//
+//};
+//
+//int main() {
+//
+//
+//	std::vector<Point3D> vScenePoints;
+//	pcl::PointCloud<pcl::PointNormal>::Ptr pSceneCloud(new pcl::PointCloud<pcl::PointNormal>);
+//	pcl::PointCloud<pcl::PointNormal>::Ptr pNearCloud(new pcl::PointCloud<pcl::PointNormal>);
+//
+//	pcl::io::loadPLYFile("Map_PCNormal.ply", *pSceneCloud);
+//	//HPDpointclouddataread("Map_trees.las", pRawCloud, vScenePoints);
+//
+//	//SamplePoints(*pRawCloud, *pSceneCloud, 5);
+//	std::cout << "finish reading" << std::endl;
+//	std::cout << pSceneCloud->points.size() << std::endl;
+//
+//	pcl::PointXYZ oViewPoint;
+//	//x 0.535947 y  0.62239 z 0.535947 bunny
+//	//x 0.457275 y  0.500000 z 1.814216 Cassette.las
+//	//x 0.0 -y 0.0 z 0.0 scene1oneframe.las
+//	//x 58.264355 y -39.349892 z 5.656522 Map_SLAM.las
+//	oViewPoint.x = 51.817355;
+//	oViewPoint.y = -7.378492;
+//	oViewPoint.z = 6.556522;
+//
+//	std::cout << "start!" << std::endl;
+//
+//	NearbyClouds(*pSceneCloud, oViewPoint, *pNearCloud, 15.0f);
+//	std::cout << pNearCloud->points.size() << std::endl;
+//	//******voxelization********
+//	Voxelization oVoxeler(*pNearCloud);
+//	//set the number of voxels
+//	//oVoxeler.GetIntervalNum(100,100,100);
+//	pcl::PointXYZ oRes;
+//	oRes.x = 0.2;
+//	oRes.y = 0.2;
+//	oRes.z = 0.2;
+//	oVoxeler.GetResolution(oRes);
+//
+//	//voxelize the space
+//	oVoxeler.VoxelizeSpace();
+//
+//	//******compute signed distance********
+//	//***compute signed distance of a glance***
+//	SignedDistance oSDer;
+//	std::vector<float> vSignedDis = oSDer.NormalBasedGlance(pNearCloud, oVoxeler);
+//
+//	std::vector<bool> vVoxelStatus;
+//
+//	oVoxeler.OutputNonEmptyVoxels(vVoxelStatus);
+//
+//	oVoxeler.ClearMiddleData();
+//
+//	//******construction********
+//	//marching cuber
+//	CIsoSurface<float> oMarchingCuber;
+//	oMarchingCuber.GenerateSurface(vSignedDis, vVoxelStatus, 0,
+//			                       oVoxeler.m_iFinalVoxelNum.ixnum - 1, oVoxeler.m_iFinalVoxelNum.iynum - 1, oVoxeler.m_iFinalVoxelNum.iznum - 1, 
+//			                       oVoxeler.m_oVoxelLength.x, oVoxeler.m_oVoxelLength.y, oVoxeler.m_oVoxelLength.z);
+//
+//
+//
+//	std::cout << "over!" << std::endl;
+//
+//	//******output********
+//	pcl::PolygonMesh oCBModel;
+//	oMarchingCuber.OutputMesh(oVoxeler.m_oOriCorner, oCBModel);
+//	
+//	pcl::io::savePLYFileBinary("cb_res.ply", oCBModel);
+//	std::cout << "the number of final faces after reconstruction: " << oCBModel.polygons.size() << std::endl;
+//
+//	pcl::PointCloud<pcl::PointNormal>::Ptr pSaveCloud(new pcl::PointCloud<pcl::PointNormal>);
+//	for (int i = 0; i != oVoxeler.m_pVoxelNormals->points.size(); ++i)
+//		if (oVoxeler.m_pVoxelNormals->points[i].x != 0.0f)
+//			pSaveCloud->points.push_back(oVoxeler.m_pVoxelNormals->points[i]);
+//
+//	pcl::io::savePLYFile("Voxel_Normal.ply", *pSaveCloud);
+//
+//	//´°¿Ú¿ªÆô
+//	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer);
+//	HpdDisplay hpdisplay;
+//
+//	viewer->addPointCloudNormals<pcl::PointNormal>(oVoxeler.m_pVoxelNormals, 0.2, 50.0f, "normal");
+//	//viewer->addPolygonMesh<pcl::PointXYZ>(pRawCloud, oSDer.m_vSurfaceIdxs, "polyline");
+//	
+//	while (!viewer->wasStopped()){
+//	
+//		viewer->spinOnce ();
+//		
+//	}
+//		
+//	return 0;
+//
+//		
+//}
 
 ///*************one frame reconstruction*********************/
 //#include "HpdPointCloudDisplay.h"

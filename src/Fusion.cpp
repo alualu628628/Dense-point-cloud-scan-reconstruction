@@ -188,9 +188,9 @@ pcl::PointNormal Fusion::NormalFusion(const std::vector<int> & vPointIdx, const 
 	}
 
 	
-	float fNum = float(vCloudNormal.points.size());
+	float fNum = float(vPointIdx.size());
 
-	if (fNum){
+	if (vPointIdx.size()){
 		//take the mean
 		oOnePN.x = oOnePN.x / fNum;
 		oOnePN.y = oOnePN.y / fNum;

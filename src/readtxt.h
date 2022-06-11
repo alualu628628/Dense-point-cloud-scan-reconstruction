@@ -29,6 +29,7 @@ public:
 };
 
 void WritePointCloudTxt(string fileName, pcl::PointCloud<pcl::PointXYZ> &, std::vector<float> &);
+void WritePointCloudTxt(string fileName, pcl::PointCloud<pcl::PointNormal> & vCloud, std::vector<float> & vFeatures);
 void WritePointCloudTxt(string fileName, pcl::PointCloud<pcl::PointXYZ> & vCloud, std::vector<int> & vClasses);
 void WritePointCloudTxt(string fileName, pcl::PointCloud<pcl::PointXYZ> &);
 

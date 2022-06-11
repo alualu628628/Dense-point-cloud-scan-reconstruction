@@ -20,6 +20,12 @@ public:
 	~ExplicitRecParam(){
 	};
 
+	void SetGHPR(float fGHPRParam){
+	
+		m_GHPRParam = fGHPRParam;
+	
+	};
+
 	//ghpr threshold
 	float m_GHPRParam;
 

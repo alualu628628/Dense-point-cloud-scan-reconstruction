@@ -128,11 +128,31 @@ void WritePointCloudTxt(string fileName, pcl::PointCloud<pcl::PointXYZ> & vCloud
 
 	//output
 	for (int i = 0; i != vCloud.size(); ++i){
-		oOutFile << vCloud.points[i].x << " "
+		if (vFeatures[i]!=0.0f)
+			oOutFile << vCloud.points[i].x << " "
 			          << vCloud.points[i].y << " "
 			          << vCloud.points[i].z << " "
 			          << vFeatures[i] << " "
 			          << std::endl;
+	}
+
+	oOutFile.close();
+
+}
+
+void WritePointCloudTxt(string fileName, pcl::PointCloud<pcl::PointNormal> & vCloud, std::vector<float> & vFeatures){
+
+	std::ofstream oOutFile;
+	oOutFile.open(fileName, std::ios::ate | std::ios::out);
+
+	//output
+	for (int i = 0; i != vCloud.size(); ++i){
+
+		oOutFile << vCloud.points[i].x << " "
+			<< vCloud.points[i].y << " "
+			<< vCloud.points[i].z << " "
+			<< vFeatures[i] << " "
+			<< std::endl;
 	}
 
 	oOutFile.close();

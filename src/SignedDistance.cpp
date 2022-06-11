@@ -239,7 +239,7 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 	                                                 Voxelization & oVoxeler){
 	
 	//
-	pcl::PointCloud<pcl::PointNormal>::Ptr pVoxelNormals(new pcl::PointCloud<pcl::PointNormal>);
+	
 
 	Fusion oVoxelFusion;
 
@@ -249,9 +249,18 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
 		
 		pcl::PointNormal oOneVoxelN = oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx[i], *pCloudNormals);
-		pVoxelNormals->push_back(oOneVoxelN);
+		oVoxeler.m_pVoxelNormals->push_back(oOneVoxelN);
 	
 	}
+
+	std::vector<float> vPointLabels(pCloudNormals->points.size(), 0.0);
+	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
+		for (int j = 0; j != oVoxeler.m_vVoxelPointIdx[i].size(); ++j){
+			int iPointId = oVoxeler.m_vVoxelPointIdx[i][j];
+			vPointLabels[iPointId] = float(i);
+		}
+	}
+	WritePointCloudTxt("PointLabels.txt", *pCloudNormals, vPointLabels);
 
 	//compute the sampled point normal based on the face normal
 	ConvexHullOperation oConvexHullOPer;
@@ -260,7 +269,7 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 
 
 	//compute the sampled point normal and divde it into point and normal
-	oConvexHullOPer.ComputeAllFaceParams(*pVoxelNormals, vVoxelNormalPara);
+	oConvexHullOPer.ComputeAllFaceParams(*oVoxeler.m_pVoxelNormals, vVoxelNormalPara);
 
 
 
@@ -273,7 +282,7 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 	WritePointCloudTxt("NodeSignedDistance.txt", *oVoxeler.m_pCornerCloud, vCornerSignedDis);
 
 	//prepare for next calculation
-	oVoxeler.ClearMiddleData();
+	//oVoxeler.ClearMiddleData();
 
 	//output
 	return vCornerSignedDis;

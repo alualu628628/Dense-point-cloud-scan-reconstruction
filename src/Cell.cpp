@@ -5,7 +5,8 @@ Voxelization::Voxelization(const pcl::PointCloud<pcl::PointXYZ> & vCloud)
 	                  :m_fMinX(FLT_MAX),m_fMinY(FLT_MAX),m_fMinZ(FLT_MAX),
                     m_fMaxX(-FLT_MAX),m_fMaxY(-FLT_MAX),m_fMaxZ(-FLT_MAX),
 					m_fDefault(0.0), m_bParamFlag(false), m_fExpandNum(1.0),
-					m_pCornerCloud(new pcl::PointCloud<pcl::PointXYZ>){
+					m_pCornerCloud(new pcl::PointCloud<pcl::PointXYZ>),
+					m_pVoxelNormals(new pcl::PointCloud<pcl::PointNormal>){
 
 	BoundingBoxValue(vCloud);
 
@@ -18,7 +19,8 @@ Voxelization::Voxelization(const pcl::PointCloud<pcl::PointNormal> & vCloud)
 	:m_fMinX(FLT_MAX), m_fMinY(FLT_MAX), m_fMinZ(FLT_MAX),
 	m_fMaxX(-FLT_MAX), m_fMaxY(-FLT_MAX), m_fMaxZ(-FLT_MAX),
 	m_fDefault(0.0), m_bParamFlag(false), m_fExpandNum(2.0),
-	m_pCornerCloud(new pcl::PointCloud<pcl::PointXYZ>){
+	m_pCornerCloud(new pcl::PointCloud<pcl::PointXYZ>),
+	m_pVoxelNormals(new pcl::PointCloud<pcl::PointNormal>){
 
 	BoundingBoxValue(vCloud);
 
@@ -123,14 +125,6 @@ IndexinAxis Voxelization::Tran1DIdxTo3D(const int & i1DIdx){
 	o3DIdx.iznum = i1DIdx / (m_iFinalVoxelNum.iynum * m_iFinalVoxelNum.ixnum);
 	o3DIdx.iynum = (i1DIdx - o3DIdx.iznum * (m_iFinalVoxelNum.iynum * m_iFinalVoxelNum.ixnum)) / m_iFinalVoxelNum.ixnum;
 	o3DIdx.ixnum = i1DIdx - o3DIdx.iznum * (m_iFinalVoxelNum.iynum * m_iFinalVoxelNum.ixnum) - o3DIdx.iynum * m_iFinalVoxelNum.ixnum;
-	if (o3DIdx.ixnum == 51 || o3DIdx.iynum == 51 || o3DIdx.iznum == 51){
-		std::cout << "strange!" << std::endl;
-		std::cout << "   ixnum: " << o3DIdx.ixnum;
-		std::cout << "   iynum: " << o3DIdx.iynum;
-		std::cout << "   iznum: " << o3DIdx.iznum;
-		std::cout << " i1DIdx: " << i1DIdx;
-		std::cout <<std::endl;
-	}
 
 	return o3DIdx;
 
@@ -440,16 +434,6 @@ void Voxelization::VoxelizePoints(const pcl::PointCloud<pcl::PointNormal> & vSam
 		oPoint.z = vSampledCloud.points[i].z;
 		int iVoxelIdx = PointBelongVoxel(oPoint, oP3DIndex);
 
-		if (oP3DIndex.ixnum == 51 || oP3DIndex.iynum == 51 || oP3DIndex.iznum == 51){
-			std::cout << "strange???" << std::endl;
-			std::cout << "   ixnum: " << oP3DIndex.ixnum;
-			std::cout << "   iynum: " << oP3DIndex.iynum;
-			std::cout << "   iznum: " << oP3DIndex.iznum;
-			std::cout << "iVoxelIdx: " << iVoxelIdx;
-			std::cout << std::endl;
-		}
-
-
 		//if this voxel is still a empty voxel
 		//the label its corner as near node for calculation of signed distance
 
@@ -515,6 +499,22 @@ void Voxelization::VoxelizePoints(const pcl::PointCloud<pcl::PointXYZ> & vSample
 		m_vVoxelPointIdx[iVoxelIdx].push_back(i);
 
 	}//end for
+
+}
+
+
+void Voxelization::OutputNonEmptyVoxels(std::vector<bool> & vVoxelStatus){
+
+	vVoxelStatus.clear();
+	vVoxelStatus.resize(m_vVoxelPointIdx.size(), false);
+	
+	for (int i = 0; i != m_vVoxelPointIdx.size(); ++i){
+	
+		if (m_vVoxelPointIdx[i].size())
+			vVoxelStatus[i] = true;
+	
+	}
+
 
 }
 
