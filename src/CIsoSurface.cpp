@@ -914,6 +914,31 @@ template <class T> void CIsoSurface<T>::OutputMesh(const pcl::PointXYZ & oOffset
 
 }
 
+// output reconstruction result
+template <class T> void CIsoSurface<T>::OutputMesh(const pcl::PointXYZ & oOffset, pcl::PolygonMesh & oCBModel, pcl::PointCloud<pcl::PointXYZ>::Ptr & pMarchCuberCloud){
+
+	//vertices
+	for (unsigned int i = 0; i < m_nVertices; i++) {
+		pcl::PointXYZ oPoint;
+		oPoint.x = m_ppt3dVertices[i][0] + oOffset.x;
+		oPoint.y = m_ppt3dVertices[i][1] + oOffset.y;
+		oPoint.z = m_ppt3dVertices[i][2] + oOffset.z;
+		pMarchCuberCloud->points.push_back(oPoint);
+	}
+	pcl::toPCLPointCloud2(*pMarchCuberCloud, oCBModel.cloud);
+
+	//faces, relationship of vertices
+	for (unsigned int i = 0; i < m_nTriangles; i++) {
+		pcl::Vertices oOneVertices;
+		oOneVertices.vertices.push_back(m_piTriangleIndices[i * 3]);
+		oOneVertices.vertices.push_back(m_piTriangleIndices[i * 3 + 1]);
+		oOneVertices.vertices.push_back(m_piTriangleIndices[i * 3 + 2]);
+		oCBModel.polygons.push_back(oOneVertices);
+	}
+
+}
+
+
 template class CIsoSurface<short>;
 template class CIsoSurface<unsigned short>;
 template class CIsoSurface<float>;

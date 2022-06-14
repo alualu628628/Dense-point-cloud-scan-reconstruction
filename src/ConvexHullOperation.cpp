@@ -218,7 +218,7 @@ void ConvexHullOperation::CaculateTriangleNormal(const pcl::PointCloud<pcl::Poin
 	//Normalization
 	if (fLen == 0.0){
 		//throw Exception();
-		std::cout << "something wrong on normal vector calculation!" << std::endl;
+		//std::cout << "something wrong on normal vector calculation!" << std::endl;
 	}
 	else{
 		//normalization by using norm
