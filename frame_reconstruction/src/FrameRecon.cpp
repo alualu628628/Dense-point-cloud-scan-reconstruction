@@ -13,7 +13,8 @@ Input: node - a ros node class
 *************************************************/
 FrameRecon::FrameRecon(ros::NodeHandle & node,
                        ros::NodeHandle & nodeHandle):
-                       m_iTrajFrameNum(0){
+                       m_iTrajFrameNum(0),
+                       m_pMultiFrames(new pcl::PointCloud<pcl::PointXYZ>){
 
 	//read parameters
 	ReadLaunchParams(nodeHandle);
@@ -109,10 +110,7 @@ bool FrameRecon::ReadLaunchParams(ros::NodeHandle & nodeHandle) {
   nodeHandle.param("polygon_tf_id", m_sOutMeshTFId, std::string("camera_init"));
 
   //point cloud sampling number
-  nodeHandle.param("sample_pcframe_num", m_iFrameSmpNum, 1);
-
-  //point cloud sampling number
-  nodeHandle.param("sample_inputpoints_num", m_iSampleInPNum, 1);
+  nodeHandle.param("scantoframe_num", m_iFrameAccum, 1);
 
   //height of viewpoint
   double dViewZOffset;
@@ -327,40 +325,54 @@ Others: none
 *************************************************/
 void FrameRecon::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaserData)
 {
+	
+	////a point clouds in PCL type
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pRawCloud(new pcl::PointCloud<pcl::PointXYZ>);
+	////message from ROS type to PCL type
+	pcl::fromROSMsg(vLaserData, *pRawCloud);
 
-	if (!(m_iPCFrameCount%m_iFrameSmpNum)){
+	//get one livox scan for forming a frame point cloud 
+	for(int i = 0; i != pRawCloud->points.size(); ++i)
+		m_pMultiFrames->points.push_back(pRawCloud->points[i]);
 
-		////a point clouds in PCL type
-		pcl::PointCloud<pcl::PointXYZ>::Ptr pRawCloud(new pcl::PointCloud<pcl::PointXYZ>);
-		////message from ROS type to PCL type
-		pcl::fromROSMsg(vLaserData, *pRawCloud);
+	std::cout<<"m_pMultiFrames: "<<m_pMultiFrames->points.size()<<std::endl;
+
+	m_iPCFrameCount++;
+
+	//get the query time
+	if(m_iPCFrameCount == ceil(float(m_iFrameAccum)/2.0f))
+		m_oMidScanStamp = vLaserData.header.stamp;
+
+	//if it forms one frame point clouds
+	if (!(m_iPCFrameCount%m_iFrameAccum)){
 
 		//if have corresponding trajectory point (viewpoint)
 		pcl::PointXYZ oCurrentViewP;
 
 		if (m_vOdomHistory.size()){
 			//
-			oCurrentViewP = ComputeQueryTraj(vLaserData.header.stamp);
+			oCurrentViewP = ComputeQueryTraj(m_oMidScanStamp);
 		
 		//else waiting for sync
-		}else{
-
-			return;
 		}
 		
-		pcl::PointCloud<pcl::PointXYZ>::Ptr pSceneCloud(new pcl::PointCloud<pcl::PointXYZ>);
-		SamplePoints(*pRawCloud, *pSceneCloud, m_iSampleInPNum);
+		//SamplePoints(*m_pMultiFrames, *pSceneCloud, m_iSampleInPNum);
+		
+		std::cout<<"m_pMultiFrames: "<<m_pMultiFrames->points.size()<<std::endl;
 		
 		pcl::PointCloud<pcl::PointNormal>::Ptr pFramePNormal(new pcl::PointCloud<pcl::PointNormal>);
 
+
 		m_oExplicitBuilder.SetViewPoint(oCurrentViewP, m_fViewZOffset);
-		m_oExplicitBuilder.FrameReconstruction(*pSceneCloud, *pFramePNormal);
+
+
+		m_oExplicitBuilder.FrameReconstruction(*m_pMultiFrames, *pFramePNormal);
+
 
 		//************output value******************
 		for(int i=0;i!=pFramePNormal->points.size();++i)
 			m_vMapPCN.points.push_back(pFramePNormal->points[i]);
 				
-
 		//output the visiable result
 		PublishMeshs();
 
@@ -370,9 +382,10 @@ void FrameRecon::HandlePointClouds(const sensor_msgs::PointCloud2 & vLaserData)
 		//clear this frame result
 		m_oExplicitBuilder.ClearData();
 
+		//clear data
+		m_pMultiFrames->clear();
 
-		//count
-		m_iPCFrameCount++;
+		m_iPCFrameCount = 0;
 
 	}
 

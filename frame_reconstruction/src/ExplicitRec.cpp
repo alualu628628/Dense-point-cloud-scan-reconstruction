@@ -161,6 +161,7 @@ void ExplicitRec::FrameReconstruction(const pcl::PointCloud<pcl::PointXYZ> & vSc
 	//point index for each sector
 	std::vector<std::vector<int>> vPointSecIdxs;
 	DivideSector oSectorDivider(m_iSectNum);
+
 	//set the viewpoint as 2D coordinate origin
 	oSectorDivider.SetOriginPoint(m_oViewPoint);
 	//divide clouds into sector area
@@ -176,7 +177,7 @@ void ExplicitRec::FrameReconstruction(const pcl::PointCloud<pcl::PointXYZ> & vSc
 
 	//triangular face in each sector
 	for (int i = 0; i != vPointSecIdxs.size(); ++i) {
-
+std::cout<<"vPointSecIdxs["<<i<<"].size() "<<vPointSecIdxs[i].size()<<std::endl;
 		//If the points in a sector is sufficient to calculate
 		if (vPointSecIdxs[i].size() > m_iSectorMinPNum){
 
@@ -189,7 +190,8 @@ void ExplicitRec::FrameReconstruction(const pcl::PointCloud<pcl::PointXYZ> & vSc
 				//construct point clouds
 				pSectorCloud->points.push_back(vSceneCloud.points[iSecPointInAllIdx]);
 			}
-
+std::cout<<"pSectorCloud->points.size  "<<pSectorCloud->points.size()<<std::endl;
+std::cout<<"m_bElevationFlag  "<<m_bElevationFlag<<std::endl;
 			if (m_bElevationFlag){
 				pcl::PointXYZ oViewGroundP;
 				oViewGroundP.x = m_oViewPoint.x;
@@ -198,17 +200,37 @@ void ExplicitRec::FrameReconstruction(const pcl::PointCloud<pcl::PointXYZ> & vSc
 				pSectorCloud->points.push_back(oViewGroundP);
 			}
 
+			std::ofstream oOutFile;
+			oOutFile.open("/home/ludy/oneframepointclouds.txt", std::ios::ate | std::ios::out);
+
+			//output
+			for (int i = 0; i != pSectorCloud->points.size(); ++i){
+			oOutFile  << pSectorCloud->points[i].x << " "
+			          << pSectorCloud->points[i].y << " "
+			          << pSectorCloud->points[i].z << " "
+			          << 1 << " "
+			          << std::endl;
+			}
+
+			oOutFile  << m_oViewPoint.x << " "
+			          << m_oViewPoint.y << " "
+			          << m_oViewPoint.z << " "
+			          << 2 << " "
+			          << std::endl;
+
+			oOutFile.close();
+
 			//******Mesh building******
 			//***GHPR mesh building***
 			GHPR hpdhpr(m_oViewPoint, m_GHPRParam);
 
 			//perform reconstruction
 			hpdhpr.Compute(pSectorCloud);
-
+std::cout<<"4 "<<std::endl;
 			//get the surfaces that are not connected to the viewpoint
 			std::vector<pcl::Vertices> vOneFaces;
 			vOneFaces = hpdhpr.ConstructSurfaceIdx();
-
+std::cout<<"5 "<<std::endl;
 			//***start the mesh related operation***
 			//center point of each faces
 			pcl::PointCloud<pcl::PointXYZ>::Ptr pCenterPoints(new pcl::PointCloud<pcl::PointXYZ>);

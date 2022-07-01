@@ -19,7 +19,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 <launch>
 
     <arg name="lidartopic" default="/velodyne_cloud_registered" />
-    <arg name="trajtopic" default="/integrated_to_init" />
+    <arg name="trajtopic" default="/aft_mapped_to_init" />
 
     <arg name="lidarouttopic" default="/slam_points" />
     <arg name="trajouttopic" default="/slam_odom" />

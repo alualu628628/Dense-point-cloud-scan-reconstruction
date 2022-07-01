@@ -168,10 +168,7 @@ class FrameRecon{
   ros::Publisher m_oMeshPublisher;
 
   //frame sampling
-  int m_iFrameSmpNum;
-
-  //sampling number of input point clouds
-  int m_iSampleInPNum;
+  int m_iFrameAccum;
 
   //sampling number of sector
   int m_iSectorNum;
@@ -195,6 +192,12 @@ class FrameRecon{
   //map point clouds with normals
   //accumulated processed point cloud
   pcl::PointCloud<pcl::PointNormal> m_vMapPCN;
+
+  //Multiple scans form one frame point cloud
+  pcl::PointCloud<pcl::PointXYZ>::Ptr m_pMultiFrames;
+
+  //Average time to scans (one frame point clouds)
+  ros::Time m_oMidScanStamp;
 
   //features of map point clouds
   //Features can be specified

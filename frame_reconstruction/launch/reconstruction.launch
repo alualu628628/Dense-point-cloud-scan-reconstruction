@@ -20,9 +20,9 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
     <arg name="fileoutputpath" default="/home/ludy/" />
 
-    <arg name="cloudintopic" default="/slam_points" />
+    <arg name="cloudintopic" default="/velodyne_cloud_registered" />
 
-    <arg name="odomintopic" default="/slam_odom" />
+    <arg name="odomintopic" default="/aft_mapped_to_init" />
 
     <arg name="cloudoutopic" default="/frame_cloudnormals" />
 
@@ -32,11 +32,9 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 
     <arg name="polygontfid" default="map"/>
 
-    <arg name="samplepcframenum"  default="1" />
+    <arg name="scantoframenum"  default="10" />
 
-    <arg name="sampleinpnum"  default="1" />
-
-    <arg name="sectornum"  default="12" />
+    <arg name="sectornum"  default="1" />
 
     <arg name="pointzoffset" default="0.0"/> 
 
@@ -58,10 +56,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
         <param name="polygon_out_topic" type="string" value="$(arg polygonoutopic)" />
 		
         <!-- frame id related-->
-	    <param name="sample_pcframe_num" type="int" value="$(arg samplepcframenum)" />
-
-        <!-- sampling number-->
-	    <param name="sample_inputpoints_num"  type="int" value="$(arg sampleinpnum)" />
+	    <param name="scantoframe_num" type="int" value="$(arg scantoframenum)" />
 
         <param name="sector_num"  type="int" value="$(arg sectornum)" />
 
