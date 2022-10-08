@@ -162,7 +162,7 @@ void Fusion::UnionMinimalFusion(const std::vector<float> & vCurrentDis){
 }
 
 
-pcl::PointNormal Fusion::NormalFusion(const std::vector<int> & vPointIdx, const pcl::PointCloud<pcl::PointNormal> & vCloudNormal){
+float Fusion::NormalFusion(const std::vector<int> & vPointIdx, const pcl::PointCloud<pcl::PointNormal> & vCloudNormal, pcl::PointNormal & oOutPointNormal){
 
 	//Initialize output
 	pcl::PointNormal oOnePN;
@@ -172,6 +172,8 @@ pcl::PointNormal Fusion::NormalFusion(const std::vector<int> & vPointIdx, const 
 	oOnePN.normal_x = 0.0f;
 	oOnePN.normal_y = 0.0f;
 	oOnePN.normal_z = 0.0f;
+
+	GaussianMapping oGaussSphere;
 
 	//linear increase
 	for (int i = 0; i != vPointIdx.size(); ++i){
@@ -184,6 +186,8 @@ pcl::PointNormal Fusion::NormalFusion(const std::vector<int> & vPointIdx, const 
 		oOnePN.normal_x = oOnePN.normal_x + vCloudNormal.points[iVoxelPIdx].normal_x;
 		oOnePN.normal_y = oOnePN.normal_y + vCloudNormal.points[iVoxelPIdx].normal_y;
 		oOnePN.normal_z = oOnePN.normal_z + vCloudNormal.points[iVoxelPIdx].normal_z;
+
+		//oGaussSphere.MappingtoSphere(vCloudNormal.points[iVoxelPIdx]);
 	
 	}
 
@@ -200,7 +204,19 @@ pcl::PointNormal Fusion::NormalFusion(const std::vector<int> & vPointIdx, const 
 		oOnePN.normal_z = oOnePN.normal_z / fNum;
 	}
 
-	return oOnePN;
+	oOutPointNormal.x = oOnePN.x;
+	oOutPointNormal.y = oOnePN.y;
+	oOutPointNormal.z = oOnePN.z;
+	oOutPointNormal.normal_x = oOnePN.normal_x;
+	oOutPointNormal.normal_y = oOnePN.normal_y;
+	oOutPointNormal.normal_z = oOnePN.normal_z;
+
+
+	//float fNormalEntropy = oGaussSphere.ComputeDistribution();
+	float fNormalEntropy = oOnePN.normal_x*oOnePN.normal_x + oOnePN.normal_y*oOnePN.normal_y + oOnePN.normal_z*oOnePN.normal_z;
+	fNormalEntropy = sqrt(fNormalEntropy);
+
+	return fNormalEntropy;
 
 
 }

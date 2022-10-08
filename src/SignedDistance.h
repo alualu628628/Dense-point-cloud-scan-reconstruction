@@ -26,7 +26,7 @@ class SignedDisParam{
 
 public:
 
-	SignedDisParam() :m_GHPRParam(3.6){
+	SignedDisParam() :m_GHPRParam(2.5){
 	
 	
 	};

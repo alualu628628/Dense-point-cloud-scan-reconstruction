@@ -8,6 +8,8 @@
 #include<pcl/point_types.h>
 #include<pcl/kdtree/kdtree.h>
 
+#include "NormalFeatures.h"//2022.10.08
+
 // 一维滤波器信息结构体
 typedef  struct{
 	double filterValue;  //k-1时刻的滤波值，即是k-1时刻的值
@@ -62,7 +64,7 @@ public:
 	void UnionMinimalFusion(const std::vector<float> & vCurrentDis);
 
 	//fuses normal vector
-	pcl::PointNormal NormalFusion(const std::vector<int> & vPointIdx, const pcl::PointCloud<pcl::PointNormal> & vCloudNormal);
+	float NormalFusion(const std::vector<int> & vPointIdx, const pcl::PointCloud<pcl::PointNormal> & vCloudNormal, pcl::PointNormal & oOutPointNormal);
 
 	//*******data********
 	std::vector<float> m_vAccDis;

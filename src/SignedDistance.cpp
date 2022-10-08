@@ -246,9 +246,12 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 	//****get the nodes that are near the surface****
 	oVoxeler.VoxelizePoints(*pCloudNormals);
 
+	std::vector<float> vCenterDis;
 	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
 		
-		pcl::PointNormal oOneVoxelN = oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx[i], *pCloudNormals);
+		pcl::PointNormal oOneVoxelN;
+		float fCenterDis = oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx[i], *pCloudNormals, oOneVoxelN);
+		vCenterDis.push_back(fCenterDis);
 		oVoxeler.m_pVoxelNormals->push_back(oOneVoxelN);
 	
 	}
@@ -257,7 +260,7 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
 		for (int j = 0; j != oVoxeler.m_vVoxelPointIdx[i].size(); ++j){
 			int iPointId = oVoxeler.m_vVoxelPointIdx[i][j];
-			vPointLabels[iPointId] = float(i);
+			vPointLabels[iPointId] = vCenterDis[i];
 		}
 	}
 	WritePointCloudTxt("PointLabels.txt", *pCloudNormals, vPointLabels);
@@ -267,11 +270,8 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 
 	std::vector<FacePara> vVoxelNormalPara;
 
-
 	//compute the sampled point normal and divde it into point and normal
 	oConvexHullOPer.ComputeAllFaceParams(*oVoxeler.m_pVoxelNormals, vVoxelNormalPara);
-
-
 
 	//construct new voxel index
 	std::vector<int> vEmptyVec;
