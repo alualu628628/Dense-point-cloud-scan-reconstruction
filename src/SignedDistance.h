@@ -59,15 +59,16 @@ public:
 		                                  const pcl::PointXYZ & oViewPoint,
 		                             const pcl::PointCloud<pcl::PointXYZ>::Ptr & m_pVoxelCorner);
 
-	//compute the signed distance based on ray cast (polar) - type 2
+	//compute the signed distance based on point - type 3
 	std::vector<float> PointBasedGlance(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pRawCloud,
 		                                const pcl::PointXYZ & oViewPoint,
 		                                Voxelization & oVoxeler);
 
 
-	//compute the signed distance based on ray cast (polar) - type 2
+	//compute the signed distance based on point and normal - type 4
+	//fThrCenterDis = 1.01f means that distance value is not applicable (leading to single-scale modeling)
 	std::vector<float> NormalBasedGlance(const pcl::PointCloud<pcl::PointNormal>::Ptr & pCloudNormals,
-		                                 Voxelization & oVoxeler);
+										Voxelization & oVoxeler, float fThrCenterDis = 1.01f);
 
 	//compute the nearest distance
 	static std::vector<float> MinKDDis(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & pQueryCloud);

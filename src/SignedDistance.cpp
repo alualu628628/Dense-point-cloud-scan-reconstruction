@@ -234,9 +234,10 @@ std::vector<float> SignedDistance::PointBasedGlance(const pcl::PointCloud<pcl::P
 
 
 
-
+//compute normal based signed distance of one glance
+//"normal based" means the method is based on points with their normals 
 std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::PointNormal>::Ptr & pCloudNormals,
-	                                                 Voxelization & oVoxeler){
+													Voxelization & oVoxeler, float fThrCenterDis){
 	
 	//
 	
@@ -246,15 +247,80 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 	//****get the nodes that are near the surface****
 	oVoxeler.VoxelizePoints(*pCloudNormals);
 
+
+	//compute the center distance of each voxel
 	std::vector<float> vCenterDis;
 	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
 		
 		pcl::PointNormal oOneVoxelN;
+
+		//Empty voxels have a negative distance value
+		//The center distance is between 0 and 1
 		float fCenterDis = oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx[i], *pCloudNormals, oOneVoxelN);
+
+		//get reusults
 		vCenterDis.push_back(fCenterDis);
 		oVoxeler.m_pVoxelNormals->push_back(oOneVoxelN);
+
+		//mark non-empty voxels
+		if (oVoxeler.m_vVoxelPointIdx[i].size())
+			oVoxeler.m_vVoxelStatus[i] = true;
 	
 	}
+
+	//if using Multi-scale reconstruction
+	if (fThrCenterDis < 1.0f){
+
+		//Defines the state of all voxels as not yet considered
+		std::vector<bool> vConsideredStatus(vCenterDis.size(), false);
+
+		//for each voxel
+		for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
+
+			//if this voxel can be merged as a rough surface
+			if ( vCenterDis[i] >= fThrCenterDis&&
+				!vConsideredStatus[i]){
+					
+					//find front and upper voxels as neighboring voxels
+					std::vector<int> vFrontVoxelIdxs;
+					oVoxeler.FrontUpperVoxels(i, vFrontVoxelIdxs);
+
+					//check whether the neighbors has already been computed and can be merged
+					bool bAlreadyflag = false;
+					for (int j = 0; j != vFrontVoxelIdxs.size(); ++j){
+						// merged and computed or not  
+						if (vCenterDis[j] < fThrCenterDis || vConsideredStatus[vFrontVoxelIdxs[j]])
+							bAlreadyflag = true;
+
+					}//end for j
+
+					//if this voxel can be merged with neighboring voxels
+					if (!bAlreadyflag){
+						
+						//collect points and normals among neighbors
+						//replace with mean value
+						pcl::PointNormal oVoxelMergedPN;
+						oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx, vFrontVoxelIdxs, *pCloudNormals, oVoxelMergedPN);
+
+						//for each neighboring voxel
+						for (int j = 0; j != vFrontVoxelIdxs.size(); ++j){
+							//give the same point and normal vector
+							oVoxeler.m_pVoxelNormals->points[vFrontVoxelIdxs[j]] = oVoxelMergedPN;
+							//mark the point has been considered
+							vConsideredStatus[vFrontVoxelIdxs[j]] = true;
+							//mark considered voxel as non-empty voxel even if there is no point
+							oVoxeler.m_vVoxelStatus[i] = true;
+
+						}//end for j
+						
+					}//end if bAlreadyflag	
+
+			}//end if vCenterDis[i] >= fThrCenterDis && !vConsideredStatus[i]
+
+		}//end for i
+
+	}//end if
+		
 
 	std::vector<float> vPointLabels(pCloudNormals->points.size(), 0.0);
 	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
@@ -263,7 +329,7 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 			vPointLabels[iPointId] = vCenterDis[i];
 		}
 	}
-	WritePointCloudTxt("PointLabels.txt", *pCloudNormals, vPointLabels);
+	WritePointCloudTxt("CenterDistances.txt", *pCloudNormals, vPointLabels);
 
 	//compute the sampled point normal based on the face normal
 	ConvexHullOperation oConvexHullOPer;
@@ -363,11 +429,14 @@ std::vector<float> SignedDistance::PlanDistance(Voxelization & oVoxeler, const s
 
 	float fDefault = oVoxeler.m_fDefault;
 
+	//signed distance of each voxel's corner
 	std::vector<float> vSignedDis(oVoxeler.m_pCornerCloud->points.size(), 0.0);
+	//count how many times the corner 
 	std::vector<int> vCornerHits(oVoxeler.m_pCornerCloud->points.size(),0);
 
 	ConvexHullOperation oNormalOper;
 
+	//to each point
 	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
 
 		if (oVoxeler.m_vVoxelPointIdx[i].size()){

@@ -422,6 +422,10 @@ void Voxelization::VoxelizePoints(const pcl::PointCloud<pcl::PointNormal> & vSam
 	for (int i = 0; i != m_pCornerCloud->points.size(); ++i)
 		m_vVoxelPointIdx.push_back(vEmptyVec);
 
+	//new the voxel status indicating some target features
+	m_vVoxelStatus.clear();
+	m_vVoxelStatus.resize(m_vVoxelPointIdx.size(), false);
+
 	//get each point index
 	for (int i = 0; i != vSampledCloud.points.size(); ++i){
 
@@ -502,7 +506,7 @@ void Voxelization::VoxelizePoints(const pcl::PointCloud<pcl::PointXYZ> & vSample
 
 }
 
-
+//represents a non-empty voxel
 void Voxelization::OutputNonEmptyVoxels(std::vector<bool> & vVoxelStatus){
 
 	vVoxelStatus.clear();
@@ -548,6 +552,87 @@ Function: find the nodes near the surface (sampled points)
 //
 //}
 
+
+/*=======================================
+FrontUpperVoxels
+Input: IndexinAxis - a given voxel 1D index
+Output: vNeighborIdxs - front voxels and upper voxels of the given voxel (idx)
+
+
+upper voxel(1) upper voxel(4) 
+query voxel    front voxel(5)  from x axis view
+
+upper voxel(1) upper voxel(4)
+query voxel    front voxel(6)  from y axis view
+
+upper voxel(2) upper voxel(4)
+upper voxel(1) upper voxel(3)  from z axis view
+
+Function: return a voxel corner indexes
+========================================*/
+void Voxelization::FrontUpperVoxels(const int & iVoxel1DIdx, std::vector<int> & vFrontUpper1DIdxs){
+
+	//clear output
+	vFrontUpper1DIdxs.clear();
+
+	//transfor 3d index to 1D index
+	IndexinAxis oQueryVoxel3DIdx = Tran1DIdxTo3D(iVoxel1DIdx);
+	
+	//if the query voxel is at the boundary, it would output nothing
+	if (oQueryVoxel3DIdx.ixnum == m_iFinalVoxelNum.ixnum - 1||
+		oQueryVoxel3DIdx.iynum == m_iFinalVoxelNum.iynum - 1||
+		oQueryVoxel3DIdx.iznum == m_iFinalVoxelNum.iznum - 1)
+		return;
+
+	//There are seven front and upper voxels	
+	IndexinAxis oNeighborVoxel3DIdx;
+	int iNeighborVoxel1DIdx;
+
+	//case 1: above
+	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum;
+	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum;
+	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum + 1;
+	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+
+	//case 2: top left
+	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum;
+	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum + 1;
+	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum + 1;
+	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+
+	//case 3: top right
+	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum + 1;
+	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum;
+	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum + 1;
+	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+
+	//case 4: diagonally above
+	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum + 1;
+	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum + 1;
+	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum + 1;
+	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+
+	//case 5: right side
+	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum + 1;
+	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum;
+	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum;
+	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+
+	//case 6: left side
+	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum;
+	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum + 1;
+	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum ;
+	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+
+	//case 7: diagonally Opposite
+	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum + 1;
+	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum + 1;
+	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum;
+	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+
+	return;
+
+}
 
 
 /*=======================================

@@ -57,6 +57,9 @@ public:
 	//given a 3d index, compute the corner idex if this query voxel
 	void CornerIdxs(const IndexinAxis & o3DIdx, std::vector<int> & vNeighborIdxs);
 
+	//find neighboring voxels 1D index based on 1d index of a given query voxel
+	void FrontUpperVoxels(const int & iVoxel1DIdx, std::vector<int> & vFrontUpper1DIdxs);
+
 	//get the number of intervals
 	void GetIntervalNum(int iVoxelNumX, int iVoxelNumY, int iVoxelNumZ);
 
@@ -118,11 +121,14 @@ public:
 	//the index of point in each voxel
 	std::vector <std::vector<int>> m_vVoxelPointIdx;
 
-	//
+	//point with normal
 	pcl::PointCloud<pcl::PointNormal>::Ptr m_pVoxelNormals;
 
 	//a vector indicates whether the corner is adjacent to the surface
 	std::vector<bool> m_vNearStatus;
+
+	//voxel status
+	std::vector<bool> m_vVoxelStatus;
 
 	//grid default
 	float m_fDefault;

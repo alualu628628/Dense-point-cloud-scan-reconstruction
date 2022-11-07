@@ -77,18 +77,14 @@ int main() {
 	//***compute signed distance of a glance***
 	SignedDistance oSDer;
 	std::vector<float> vSignedDis = oSDer.NormalBasedGlance(pNearCloud, oVoxeler);
-
-	std::vector<bool> vVoxelStatus;
-
-	oVoxeler.OutputNonEmptyVoxels(vVoxelStatus);
-
+	
 	oVoxeler.ClearMiddleData();
 
 
 	//******construction********
 	//marching cuber
 	CIsoSurface<float> oMarchingCuber;
-	oMarchingCuber.GenerateSurface(vSignedDis, vVoxelStatus, 0,
+	oMarchingCuber.GenerateSurface(vSignedDis, oVoxeler.m_vVoxelStatus, 0,
 			                       oVoxeler.m_iFinalVoxelNum.ixnum - 1, oVoxeler.m_iFinalVoxelNum.iynum - 1, oVoxeler.m_iFinalVoxelNum.iznum - 1, 
 			                       oVoxeler.m_oVoxelLength.x, oVoxeler.m_oVoxelLength.y, oVoxeler.m_oVoxelLength.z);
 

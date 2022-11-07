@@ -211,12 +211,78 @@ float Fusion::NormalFusion(const std::vector<int> & vPointIdx, const pcl::PointC
 	oOutPointNormal.normal_y = oOnePN.normal_y;
 	oOutPointNormal.normal_z = oOnePN.normal_z;
 
-
+	//using pca based method
 	//float fNormalEntropy = oGaussSphere.ComputeDistribution();
-	float fNormalEntropy = oOnePN.normal_x*oOnePN.normal_x + oOnePN.normal_y*oOnePN.normal_y + oOnePN.normal_z*oOnePN.normal_z;
-	fNormalEntropy = sqrt(fNormalEntropy);
+
+	//define an entropy indicating the confusion of the normal vectors
+	//-1 means no value
+	float fNormalEntropy = -1.0f;
+
+	//if the input is not empty
+	if (vPointIdx.size()){
+		//give the distance for entropy
+		fNormalEntropy = oOnePN.normal_x*oOnePN.normal_x + oOnePN.normal_y*oOnePN.normal_y + oOnePN.normal_z*oOnePN.normal_z;
+
+		fNormalEntropy = sqrt(fNormalEntropy);
+	}
+
 
 	return fNormalEntropy;
 
+
+}
+
+void Fusion::NormalFusion(const std::vector<std::vector<int>> & vPointIdxs, const std::vector<int> & vVoxelIdxs, const pcl::PointCloud<pcl::PointNormal> & vCloudNormal, pcl::PointNormal & oOutPointNormal){
+
+	//Initialize output
+	pcl::PointNormal oOnePN;
+	oOnePN.x = 0.0f;
+	oOnePN.y = 0.0f;
+	oOnePN.z = 0.0f;
+	oOnePN.normal_x = 0.0f;
+	oOnePN.normal_y = 0.0f;
+	oOnePN.normal_z = 0.0f;
+
+	GaussianMapping oGaussSphere;
+
+	float fNum = 0.0f;
+
+	//linear increase
+	for (int i = 0; i != vVoxelIdxs.size(); ++i){
+
+		for (int j = 0; j != vPointIdxs[i].size(); ++j){
+
+			int iVoxelPIdx = vPointIdxs[i][j];
+
+			oOnePN.x = oOnePN.x + vCloudNormal.points[iVoxelPIdx].x;
+			oOnePN.y = oOnePN.y + vCloudNormal.points[iVoxelPIdx].y;
+			oOnePN.z = oOnePN.z + vCloudNormal.points[iVoxelPIdx].z;
+			oOnePN.normal_x = oOnePN.normal_x + vCloudNormal.points[iVoxelPIdx].normal_x;
+			oOnePN.normal_y = oOnePN.normal_y + vCloudNormal.points[iVoxelPIdx].normal_y;
+			oOnePN.normal_z = oOnePN.normal_z + vCloudNormal.points[iVoxelPIdx].normal_z;
+
+			fNum = fNum + 1.0f;
+
+		}
+
+	}
+
+	//mean
+	if (fNum){
+		//take the mean
+		oOnePN.x = oOnePN.x / fNum;
+		oOnePN.y = oOnePN.y / fNum;
+		oOnePN.z = oOnePN.z / fNum;
+		oOnePN.normal_x = oOnePN.normal_x / fNum;
+		oOnePN.normal_y = oOnePN.normal_y / fNum;
+		oOnePN.normal_z = oOnePN.normal_z / fNum;
+	}
+
+	oOutPointNormal.x = oOnePN.x;
+	oOutPointNormal.y = oOnePN.y;
+	oOutPointNormal.z = oOnePN.z;
+	oOutPointNormal.normal_x = oOnePN.normal_x;
+	oOutPointNormal.normal_y = oOnePN.normal_y;
+	oOutPointNormal.normal_z = oOnePN.normal_z;
 
 }
