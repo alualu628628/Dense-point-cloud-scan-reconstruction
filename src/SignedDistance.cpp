@@ -287,9 +287,9 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 
 					//check whether the neighbors has already been computed and can be merged
 					bool bAlreadyflag = false;
-					for (int j = 0; j != vFrontVoxelIdxs.size(); ++j){
+					for (int j = 1; j != vFrontVoxelIdxs.size(); ++j){//j = 0 is query point
 						// merged and computed or not  
-						if (vCenterDis[j] < fThrCenterDis || vConsideredStatus[vFrontVoxelIdxs[j]])
+						if (vConsideredStatus[vFrontVoxelIdxs[j]] || vCenterDis[vFrontVoxelIdxs[j]] < fThrCenterDis)
 							bAlreadyflag = true;
 
 					}//end for j
@@ -304,12 +304,15 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 
 						//for each neighboring voxel
 						for (int j = 0; j != vFrontVoxelIdxs.size(); ++j){
+							
+							//get neighboring index
+							int iNeighborIdx = vFrontVoxelIdxs[j];
 							//give the same point and normal vector
-							oVoxeler.m_pVoxelNormals->points[vFrontVoxelIdxs[j]] = oVoxelMergedPN;
+							oVoxeler.m_pVoxelNormals->points[iNeighborIdx] = oVoxelMergedPN;
 							//mark the point has been considered
-							vConsideredStatus[vFrontVoxelIdxs[j]] = true;
+							vConsideredStatus[iNeighborIdx] = true;
 							//mark considered voxel as non-empty voxel even if there is no point
-							oVoxeler.m_vVoxelStatus[i] = true;
+							oVoxeler.m_vVoxelStatus[iNeighborIdx] = true;
 
 						}//end for j
 						

@@ -65,9 +65,9 @@ int main() {
 	//set the number of voxels
 	//oVoxeler.GetIntervalNum(100,100,100);
 	pcl::PointXYZ oRes;
-	oRes.x = 0.3;
-	oRes.y = 0.3;
-	oRes.z = 0.3;
+	oRes.x = 0.15;
+	oRes.y = 0.15;
+	oRes.z = 0.15;
 	oVoxeler.GetResolution(oRes);
 
 	//voxelize the space
@@ -76,7 +76,8 @@ int main() {
 	//******compute signed distance********
 	//***compute signed distance of a glance***
 	SignedDistance oSDer;
-	std::vector<float> vSignedDis = oSDer.NormalBasedGlance(pNearCloud, oVoxeler);
+	//std::vector<float> vSignedDis = oSDer.NormalBasedGlance(pNearCloud, oVoxeler);
+	std::vector<float> vSignedDis = oSDer.NormalBasedGlance(pNearCloud, oVoxeler, 0.7);
 	
 	oVoxeler.ClearMiddleData();
 

@@ -224,6 +224,10 @@ float Fusion::NormalFusion(const std::vector<int> & vPointIdx, const pcl::PointC
 		fNormalEntropy = oOnePN.normal_x*oOnePN.normal_x + oOnePN.normal_y*oOnePN.normal_y + oOnePN.normal_z*oOnePN.normal_z;
 
 		fNormalEntropy = sqrt(fNormalEntropy);
+
+		oOutPointNormal.normal_x = oOutPointNormal.normal_x / fNormalEntropy;
+		oOutPointNormal.normal_y = oOutPointNormal.normal_y / fNormalEntropy;
+		oOutPointNormal.normal_z = oOutPointNormal.normal_z / fNormalEntropy;
 	}
 
 
@@ -250,16 +254,18 @@ void Fusion::NormalFusion(const std::vector<std::vector<int>> & vPointIdxs, cons
 	//linear increase
 	for (int i = 0; i != vVoxelIdxs.size(); ++i){
 
-		for (int j = 0; j != vPointIdxs[i].size(); ++j){
+		int iVoxelIdx = vVoxelIdxs[i];
 
-			int iVoxelPIdx = vPointIdxs[i][j];
+		for (int j = 0; j != vPointIdxs[iVoxelIdx].size(); ++j){
 
-			oOnePN.x = oOnePN.x + vCloudNormal.points[iVoxelPIdx].x;
-			oOnePN.y = oOnePN.y + vCloudNormal.points[iVoxelPIdx].y;
-			oOnePN.z = oOnePN.z + vCloudNormal.points[iVoxelPIdx].z;
-			oOnePN.normal_x = oOnePN.normal_x + vCloudNormal.points[iVoxelPIdx].normal_x;
-			oOnePN.normal_y = oOnePN.normal_y + vCloudNormal.points[iVoxelPIdx].normal_y;
-			oOnePN.normal_z = oOnePN.normal_z + vCloudNormal.points[iVoxelPIdx].normal_z;
+			int iPointIdx = vPointIdxs[iVoxelIdx][j];
+
+			oOnePN.x = oOnePN.x + vCloudNormal.points[iPointIdx].x;
+			oOnePN.y = oOnePN.y + vCloudNormal.points[iPointIdx].y;
+			oOnePN.z = oOnePN.z + vCloudNormal.points[iPointIdx].z;
+			oOnePN.normal_x = oOnePN.normal_x + vCloudNormal.points[iPointIdx].normal_x;
+			oOnePN.normal_y = oOnePN.normal_y + vCloudNormal.points[iPointIdx].normal_y;
+			oOnePN.normal_z = oOnePN.normal_z + vCloudNormal.points[iPointIdx].normal_z;
 
 			fNum = fNum + 1.0f;
 
@@ -276,6 +282,12 @@ void Fusion::NormalFusion(const std::vector<std::vector<int>> & vPointIdxs, cons
 		oOnePN.normal_x = oOnePN.normal_x / fNum;
 		oOnePN.normal_y = oOnePN.normal_y / fNum;
 		oOnePN.normal_z = oOnePN.normal_z / fNum;
+		//output unit normal vector
+		float fNorm = sqrt(oOnePN.normal_x*oOnePN.normal_x + oOnePN.normal_y*oOnePN.normal_y + oOnePN.normal_z*oOnePN.normal_z);
+		oOnePN.normal_x = oOnePN.normal_x / fNorm;
+		oOnePN.normal_y = oOnePN.normal_y / fNorm;
+		oOnePN.normal_z = oOnePN.normal_z / fNorm;
+
 	}
 
 	oOutPointNormal.x = oOnePN.x;

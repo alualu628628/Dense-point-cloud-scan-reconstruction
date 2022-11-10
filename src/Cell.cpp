@@ -574,6 +574,8 @@ void Voxelization::FrontUpperVoxels(const int & iVoxel1DIdx, std::vector<int> & 
 
 	//clear output
 	vFrontUpper1DIdxs.clear();
+	vFrontUpper1DIdxs.reserve(8);
+	vFrontUpper1DIdxs.push_back(iVoxel1DIdx);//store itself first
 
 	//transfor 3d index to 1D index
 	IndexinAxis oQueryVoxel3DIdx = Tran1DIdxTo3D(iVoxel1DIdx);
@@ -593,42 +595,49 @@ void Voxelization::FrontUpperVoxels(const int & iVoxel1DIdx, std::vector<int> & 
 	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum;
 	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum + 1;
 	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+	vFrontUpper1DIdxs.push_back(iNeighborVoxel1DIdx);
 
 	//case 2: top left
 	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum;
 	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum + 1;
 	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum + 1;
 	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+	vFrontUpper1DIdxs.push_back(iNeighborVoxel1DIdx);
 
 	//case 3: top right
 	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum + 1;
 	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum;
 	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum + 1;
 	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+	vFrontUpper1DIdxs.push_back(iNeighborVoxel1DIdx);
 
 	//case 4: diagonally above
 	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum + 1;
 	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum + 1;
 	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum + 1;
 	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+	vFrontUpper1DIdxs.push_back(iNeighborVoxel1DIdx);
 
 	//case 5: right side
 	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum + 1;
 	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum;
 	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum;
 	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+	vFrontUpper1DIdxs.push_back(iNeighborVoxel1DIdx);
 
 	//case 6: left side
 	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum;
 	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum + 1;
 	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum ;
 	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+	vFrontUpper1DIdxs.push_back(iNeighborVoxel1DIdx);
 
 	//case 7: diagonally Opposite
 	oNeighborVoxel3DIdx.ixnum = oQueryVoxel3DIdx.ixnum + 1;
 	oNeighborVoxel3DIdx.iynum = oQueryVoxel3DIdx.iynum + 1;
 	oNeighborVoxel3DIdx.iznum = oQueryVoxel3DIdx.iznum;
 	iNeighborVoxel1DIdx = Tran3DIdxTo1D(oNeighborVoxel3DIdx);
+	vFrontUpper1DIdxs.push_back(iNeighborVoxel1DIdx);
 
 	return;
 
