@@ -298,3 +298,62 @@ void Fusion::NormalFusion(const std::vector<std::vector<int>> & vPointIdxs, cons
 	oOutPointNormal.normal_z = oOnePN.normal_z;
 
 }
+
+//reload 
+//add the normal vectors of voxels for input and ouput, respectively
+void Fusion::NormalFusion(const std::vector<int> & vVoxelIdxs, const std::vector<float> & vFeatures, pcl::PointCloud<pcl::PointNormal>::Ptr & pVoxelNormal){
+
+	//Initialize output
+	pcl::PointNormal oOnePN;
+	oOnePN.x = 0.0f;
+	oOnePN.y = 0.0f;
+	oOnePN.z = 0.0f;
+	oOnePN.normal_x = 0.0f;
+	oOnePN.normal_y = 0.0f;
+	oOnePN.normal_z = 0.0f;
+
+	GaussianMapping oGaussSphere;
+
+	float fNum = 0.0f;
+
+	//linear increase
+	for (int i = 0; i != vVoxelIdxs.size(); ++i){
+
+		int iPointIdx = vVoxelIdxs[i];
+
+		if (vFeatures[iPointIdx] >= 0){
+
+			oOnePN.x = oOnePN.x + pVoxelNormal->points[iPointIdx].x;
+			oOnePN.y = oOnePN.y + pVoxelNormal->points[iPointIdx].y;
+			oOnePN.z = oOnePN.z + pVoxelNormal->points[iPointIdx].z;
+			oOnePN.normal_x = oOnePN.normal_x + pVoxelNormal->points[iPointIdx].normal_x;
+			oOnePN.normal_y = oOnePN.normal_y + pVoxelNormal->points[iPointIdx].normal_y;
+			oOnePN.normal_z = oOnePN.normal_z + pVoxelNormal->points[iPointIdx].normal_z;
+
+			fNum = fNum + 1.0f;
+
+		}
+
+	}
+
+	//mean
+	if (fNum){
+		//take the mean
+		oOnePN.x = oOnePN.x / fNum;
+		oOnePN.y = oOnePN.y / fNum;
+		oOnePN.z = oOnePN.z / fNum;
+		oOnePN.normal_x = oOnePN.normal_x / fNum;
+		oOnePN.normal_y = oOnePN.normal_y / fNum;
+		oOnePN.normal_z = oOnePN.normal_z / fNum;
+		//output unit normal vector
+		float fNorm = sqrt(oOnePN.normal_x*oOnePN.normal_x + oOnePN.normal_y*oOnePN.normal_y + oOnePN.normal_z*oOnePN.normal_z);
+		oOnePN.normal_x = oOnePN.normal_x / fNorm;
+		oOnePN.normal_y = oOnePN.normal_y / fNorm;
+		oOnePN.normal_z = oOnePN.normal_z / fNorm;
+
+	}
+
+	//the first member of vVoxelIdxs should be the query point
+	pVoxelNormal->points[vVoxelIdxs[0]] = oOnePN;
+
+}

@@ -66,6 +66,7 @@ public:
 	//fuses normal vector
 	float NormalFusion(const std::vector<int> & vPointIdx, const pcl::PointCloud<pcl::PointNormal> & vCloudNormal, pcl::PointNormal & oOutPointNormal);
 	void NormalFusion(const std::vector<std::vector<int>> & vPointIdxs, const std::vector<int> & vVoxelIdxs, const pcl::PointCloud<pcl::PointNormal> & vCloudNormal, pcl::PointNormal & oOutPointNormal);
+	void NormalFusion(const std::vector<int> & vVoxelIdxs, const std::vector<float> & vFeatures, pcl::PointCloud<pcl::PointNormal>::Ptr & pVoxelNormal);
 
 	//*******data********
 	std::vector<float> m_vAccDis;

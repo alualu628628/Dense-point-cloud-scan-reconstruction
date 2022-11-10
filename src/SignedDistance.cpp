@@ -239,14 +239,11 @@ std::vector<float> SignedDistance::PointBasedGlance(const pcl::PointCloud<pcl::P
 std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::PointNormal>::Ptr & pCloudNormals,
 													Voxelization & oVoxeler, float fThrCenterDis){
 	
-	//
-	
-
+	//a voxel fusion object
 	Fusion oVoxelFusion;
 
 	//****get the nodes that are near the surface****
 	oVoxeler.VoxelizePoints(*pCloudNormals);
-
 
 	//compute the center distance of each voxel
 	std::vector<float> vCenterDis;
@@ -278,51 +275,37 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 		for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
 
 			//if this voxel can be merged as a rough surface
-			if ( vCenterDis[i] >= fThrCenterDis&&
-				!vConsideredStatus[i]){
+			if ( !vConsideredStatus[i]){
 					
-					//find front and upper voxels as neighboring voxels
-					std::vector<int> vFrontVoxelIdxs;
-					oVoxeler.FrontUpperVoxels(i, vFrontVoxelIdxs);
+				//find front and upper voxels as neighboring voxels
+				std::vector<int> vFrontVoxelIdxs;
+				oVoxeler.FrontUpperVoxels(i, vFrontVoxelIdxs);
 
-					//check whether the neighbors has already been computed and can be merged
-					bool bAlreadyflag = false;
-					for (int j = 1; j != vFrontVoxelIdxs.size(); ++j){//j = 0 is query point
-						// merged and computed or not  
-						if (vConsideredStatus[vFrontVoxelIdxs[j]] || vCenterDis[vFrontVoxelIdxs[j]] < fThrCenterDis)
-							bAlreadyflag = true;
+				//collect points and normals among neighbors
+				//replace with mean value
+				pcl::PointNormal oVoxelMergedPN;
+				//oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx, vFrontVoxelIdxs, *pCloudNormals, oVoxelMergedPN);
+				oVoxelFusion.NormalFusion(vFrontVoxelIdxs, vCenterDis, oVoxeler.m_pVoxelNormals);
 
-					}//end for j
-
-					//if this voxel can be merged with neighboring voxels
-					if (!bAlreadyflag){
-						
-						//collect points and normals among neighbors
-						//replace with mean value
-						pcl::PointNormal oVoxelMergedPN;
-						oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx, vFrontVoxelIdxs, *pCloudNormals, oVoxelMergedPN);
-
-						//for each neighboring voxel
-						for (int j = 0; j != vFrontVoxelIdxs.size(); ++j){
+				//for each neighboring voxel
+				for (int j = 0; j != vFrontVoxelIdxs.size(); ++j){
 							
-							//get neighboring index
-							int iNeighborIdx = vFrontVoxelIdxs[j];
-							//give the same point and normal vector
-							oVoxeler.m_pVoxelNormals->points[iNeighborIdx] = oVoxelMergedPN;
-							//mark the point has been considered
-							vConsideredStatus[iNeighborIdx] = true;
-							//mark considered voxel as non-empty voxel even if there is no point
-							oVoxeler.m_vVoxelStatus[iNeighborIdx] = true;
+					//get neighboring index
+					int iNeighborIdx = vFrontVoxelIdxs[j];
+					//give the same point and normal vector
+					oVoxeler.m_pVoxelNormals->points[iNeighborIdx] = oVoxeler.m_pVoxelNormals->points[vFrontVoxelIdxs[0]];
+					//mark the point has been considered
+					vConsideredStatus[iNeighborIdx] = true;
+					//mark considered voxel as non-empty voxel even if there is no point
+					oVoxeler.m_vVoxelStatus[iNeighborIdx] = true;
 
-						}//end for j
-						
-					}//end if bAlreadyflag	
+				}//end for j
 
 			}//end if vCenterDis[i] >= fThrCenterDis && !vConsideredStatus[i]
 
-		}//end for i
+		}//end for int i = 0; i != oVoxeler.m_vVoxelPointIdx.size()
 
-	}//end if
+	}//end if fThrCenterDis < 1.0f
 		
 
 	std::vector<float> vPointLabels(pCloudNormals->points.size(), 0.0);
@@ -358,6 +341,127 @@ std::vector<float> SignedDistance::NormalBasedGlance(const pcl::PointCloud<pcl::
 
 }
 
+
+//compute normal based signed distance of one glance
+//"normal based" means the method is based on points with their normals 
+std::vector<float> SignedDistance::NormalBasedGlance2(const pcl::PointCloud<pcl::PointNormal>::Ptr & pCloudNormals,
+	Voxelization & oVoxeler, float fThrCenterDis){
+
+	//a voxel fusion object
+	Fusion oVoxelFusion;
+
+	//****get the nodes that are near the surface****
+	oVoxeler.VoxelizePoints(*pCloudNormals);
+
+	//compute the center distance of each voxel
+	std::vector<float> vCenterDis;
+	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
+
+		pcl::PointNormal oOneVoxelN;
+
+		//Empty voxels have a negative distance value
+		//The center distance is between 0 and 1
+		float fCenterDis = oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx[i], *pCloudNormals, oOneVoxelN);
+
+		//get reusults
+		vCenterDis.push_back(fCenterDis);
+		oVoxeler.m_pVoxelNormals->push_back(oOneVoxelN);
+
+		//mark non-empty voxels
+		if (oVoxeler.m_vVoxelPointIdx[i].size())
+			oVoxeler.m_vVoxelStatus[i] = true;
+
+	}
+
+	//if using Multi-scale reconstruction
+	if (fThrCenterDis < 1.0f){
+
+		//Defines the state of all voxels as not yet considered
+		std::vector<bool> vConsideredStatus(vCenterDis.size(), false);
+
+		//for each voxel
+		for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
+
+			//if this voxel can be merged as a rough surface
+			if (vCenterDis[i] >= fThrCenterDis&&
+				!vConsideredStatus[i]){
+
+				//find front and upper voxels as neighboring voxels
+				std::vector<int> vFrontVoxelIdxs;
+				oVoxeler.FrontUpperVoxels(i, vFrontVoxelIdxs);
+
+				//check whether the neighbors has already been computed and can be merged
+				bool bAlreadyflag = false;
+				for (int j = 1; j != vFrontVoxelIdxs.size(); ++j){//j = 0 is query point
+					// merged and computed or not  
+					if (vConsideredStatus[vFrontVoxelIdxs[j]] || vCenterDis[vFrontVoxelIdxs[j]] < fThrCenterDis)
+						bAlreadyflag = true;
+
+				}//end for j
+
+				//if this voxel can be merged with neighboring voxels
+				if (!bAlreadyflag){
+
+					//collect points and normals among neighbors
+					//replace with mean value
+					pcl::PointNormal oVoxelMergedPN;
+					oVoxelFusion.NormalFusion(oVoxeler.m_vVoxelPointIdx, vFrontVoxelIdxs, *pCloudNormals, oVoxelMergedPN);
+
+					//for each neighboring voxel
+					for (int j = 0; j != vFrontVoxelIdxs.size(); ++j){
+
+						//get neighboring index
+						int iNeighborIdx = vFrontVoxelIdxs[j];
+						//give the same point and normal vector
+						oVoxeler.m_pVoxelNormals->points[iNeighborIdx] = oVoxelMergedPN;
+						//mark the point has been considered
+						vConsideredStatus[iNeighborIdx] = true;
+						//mark considered voxel as non-empty voxel even if there is no point
+						oVoxeler.m_vVoxelStatus[iNeighborIdx] = true;
+
+					}//end for j
+
+				}//end if bAlreadyflag	
+
+			}//end if vCenterDis[i] >= fThrCenterDis && !vConsideredStatus[i]
+
+		}//end for int i = 0; i != oVoxeler.m_vVoxelPointIdx.size()
+
+	}//end if fThrCenterDis < 1.0f
+
+
+	std::vector<float> vPointLabels(pCloudNormals->points.size(), 0.0);
+	for (int i = 0; i != oVoxeler.m_vVoxelPointIdx.size(); ++i){
+		for (int j = 0; j != oVoxeler.m_vVoxelPointIdx[i].size(); ++j){
+			int iPointId = oVoxeler.m_vVoxelPointIdx[i][j];
+			vPointLabels[iPointId] = vCenterDis[i];
+		}
+	}
+	WritePointCloudTxt("CenterDistances.txt", *pCloudNormals, vPointLabels);
+
+	//compute the sampled point normal based on the face normal
+	ConvexHullOperation oConvexHullOPer;
+
+	std::vector<FacePara> vVoxelNormalPara;
+
+	//compute the sampled point normal and divde it into point and normal
+	oConvexHullOPer.ComputeAllFaceParams(*oVoxeler.m_pVoxelNormals, vVoxelNormalPara);
+
+	//construct new voxel index
+	std::vector<int> vEmptyVec;
+
+	//from corner to plan distance
+	std::vector<float> vCornerSignedDis = PlanDistance(oVoxeler, vVoxelNormalPara);
+
+	WritePointCloudTxt("NodeSignedDistance.txt", *oVoxeler.m_pCornerCloud, vCornerSignedDis);
+
+	//prepare for next calculation
+	//oVoxeler.ClearMiddleData();
+
+	//output
+	return vCornerSignedDis;
+
+}
 
 
 std::vector<float> SignedDistance::MinKDDis(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & pQueryCloud){

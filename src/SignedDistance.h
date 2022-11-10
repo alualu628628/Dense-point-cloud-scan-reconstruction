@@ -70,6 +70,9 @@ public:
 	std::vector<float> NormalBasedGlance(const pcl::PointCloud<pcl::PointNormal>::Ptr & pCloudNormals,
 										Voxelization & oVoxeler, float fThrCenterDis = 1.01f);
 
+	std::vector<float> NormalBasedGlance2(const pcl::PointCloud<pcl::PointNormal>::Ptr & pCloudNormals,
+		Voxelization & oVoxeler, float fThrCenterDis = 1.01f);
+
 	//compute the nearest distance
 	static std::vector<float> MinKDDis(const pcl::PointCloud<pcl::PointXYZ>::Ptr & pCloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr & pQueryCloud);
 
